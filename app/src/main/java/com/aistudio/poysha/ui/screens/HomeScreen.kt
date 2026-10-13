@@ -38,6 +38,8 @@ fun HomeScreen(
     val cashTx by PosRepository.cashTransactions.collectAsState()
     val products by PosRepository.products.collectAsState()
     val contacts by PosRepository.contacts.collectAsState()
+    val syncStatus by PosRepository.syncStatus.collectAsState()
+    val lastError by PosRepository.lastError.collectAsState()
 
     val currentBal = remember(cashTx) { PosRepository.calculateCurrentBalance() }
     val todaySales = remember(sales) { PosRepository.calculateTodaySales() }
@@ -99,16 +101,27 @@ fun HomeScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Surface(
-                            color = Color.White.copy(alpha = 0.16f),
+                            color = Color.White.copy(alpha = 0.18f),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text(
-                                "Your Awesome Business Space",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White.copy(alpha = 0.95f),
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                            )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(if (lastError != null) PoyshaRed else Color(0xFF69F0AE))
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (lastError != null) "Sync Error" else syncStatus,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.White
+                                )
+                            }
                         }
                     }
 
@@ -124,6 +137,37 @@ fun HomeScreen(
                         ) {
                             Text(dayStr, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                             Text(monthStr, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.9f))
+                        }
+                    }
+                }
+            }
+        }
+
+        if (lastError != null) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = PoyshaRed)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = lastError ?: "",
+                            color = PoyshaRed,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { PosRepository.clearError() }, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = PoyshaRed, modifier = Modifier.size(16.dp))
                         }
                     }
                 }

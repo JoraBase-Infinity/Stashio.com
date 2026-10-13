@@ -58,6 +58,14 @@ fun PoyshaAppNav() {
         )
     }
 
+    LaunchedEffect(currentUser) {
+        if (currentUser == null && currentScreen != "AUTH") {
+            currentScreen = "AUTH"
+        } else if (currentUser != null && currentScreen == "AUTH") {
+            currentScreen = if (activeShop != null) "HOME" else "DASHBOARD"
+        }
+    }
+
     // Handle Android system back button
     BackHandler(enabled = currentScreen != "AUTH") {
         when (currentScreen) {

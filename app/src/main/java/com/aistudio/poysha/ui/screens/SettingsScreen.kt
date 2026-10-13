@@ -94,7 +94,7 @@ fun SettingsScreen(
                                 color = PoyshaTextDark
                             )
                             Text(
-                                currentUser?.phone ?: "01700000000",
+                                currentUser?.email?.ifBlank { currentUser?.phone } ?: "Firebase Account",
                                 fontSize = 12.sp,
                                 color = PoyshaTextLight
                             )
@@ -104,7 +104,7 @@ fun SettingsScreen(
                                 modifier = Modifier.padding(top = 4.dp)
                             ) {
                                 Text(
-                                    "ACTIVE ACCOUNT",
+                                    "FIREBASE CLOUD ACTIVE",
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = PoyshaGreen,
