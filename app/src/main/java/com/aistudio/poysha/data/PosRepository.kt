@@ -1,9 +1,12 @@
 package com.aistudio.poysha.data
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +21,8 @@ import java.util.UUID
 object PosRepository {
     private const val TAG = "PosRepository"
 
+    private var prefs: SharedPreferences? = null
+
     private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
     private val firestore: FirebaseFirestore get() = FirebaseFirestore.getInstance()
     private val rtdb by lazy {
@@ -26,6 +31,13 @@ object PosRepository {
         } catch (e: Exception) {
             Log.e(TAG, "RTDB init exception: ${e.message}")
             null
+        }
+    }
+
+    fun init(context: Context) {
+        if (prefs == null) {
+            prefs = context.applicationContext.getSharedPreferences("poysha_pos_prefs", Context.MODE_PRIVATE)
+            checkExistingAuth()
         }
     }
 
@@ -39,6 +51,11 @@ object PosRepository {
 
     fun hashPin(pin: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest(pin.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    fun hashMd5(pin: String): String {
+        val bytes = MessageDigest.getInstance("MD5").digest(pin.toByteArray(Charsets.UTF_8))
         return bytes.joinToString("") { "%02x".format(it) }
     }
 
@@ -94,7 +111,7 @@ object PosRepository {
         _lastError.value = null
     }
 
-    // Check if user is already signed in via Firebase Auth
+    // Check if user is already signed in via Firebase Auth or SharedPreferences session
     private fun checkExistingAuth() {
         val currentFirebaseUser = auth.currentUser
         if (currentFirebaseUser != null) {
@@ -102,7 +119,7 @@ object PosRepository {
             val email = currentFirebaseUser.email ?: ""
             val displayName = currentFirebaseUser.displayName ?: email.substringBefore("@").ifBlank { "User" }
             val phone = currentFirebaseUser.phoneNumber ?: ""
-            
+
             val user = User(
                 uid = uid,
                 email = email,
@@ -111,69 +128,244 @@ object PosRepository {
             )
             _currentUser.value = user
             loadUserData(uid)
+            return
+        }
+
+        // Restore from local SharedPreferences session (for Firestore Phone/PIN login)
+        val savedUid = prefs?.getString("user_uid", null)
+        if (!savedUid.isNullOrBlank()) {
+            val savedPhone = prefs?.getString("user_phone", "") ?: ""
+            val savedName = prefs?.getString("user_name", "Shop Owner") ?: "Shop Owner"
+            val savedEmail = prefs?.getString("user_email", "") ?: ""
+            val savedPinHash = prefs?.getString("user_pin_hash", "") ?: ""
+
+            val user = User(
+                uid = savedUid,
+                phone = savedPhone,
+                name = savedName,
+                email = savedEmail,
+                pinHash = savedPinHash
+            )
+            _currentUser.value = user
+            _syncStatus.value = "Welcome back, $savedName"
+            loadUserData(savedUid)
+        }
+    }
+
+    fun saveSession(user: User) {
+        try {
+            prefs?.edit()?.apply {
+                putString("user_uid", user.uid)
+                putString("user_phone", user.phone)
+                putString("user_name", user.name)
+                putString("user_email", user.email)
+                putString("user_pin_hash", user.pinHash)
+                apply()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving session: ${e.message}")
         }
     }
 
     // ----------------------------------------------------
-    // Real Firebase Authentication
+    // Unified Authentication (Firestore & Firebase Auth)
     // ----------------------------------------------------
+
+    private fun generateCandidateKeys(input: String): List<String> {
+        val list = LinkedHashSet<String>()
+        val trimmed = input.trim()
+        list.add(trimmed)
+        val digits = trimmed.filter { it.isDigit() }
+        if (digits.length >= 8) {
+            list.add(digits)
+            if (digits.startsWith("0") && digits.length == 11) {
+                list.add("+88$digits")
+                list.add("88$digits")
+                list.add(digits.substring(1))
+            } else if (digits.startsWith("880") && digits.length >= 13) {
+                list.add("+$digits")
+                list.add("0" + digits.removePrefix("880"))
+                list.add(digits.removePrefix("880"))
+            } else if (digits.length == 10 && digits.startsWith("1")) {
+                list.add("0$digits")
+                list.add("+880$digits")
+                list.add("880$digits")
+            }
+        }
+        return list.toList()
+    }
+
+    private fun verifyUserDoc(doc: DocumentSnapshot, pass: String): Boolean {
+        val sha256 = hashPin(pass)
+        val md5 = hashMd5(pass)
+
+        val pinHash = doc.getString("pinHash") ?: doc.getString("pinhash") ?: ""
+        val pin = doc.getString("pin") ?: ""
+        val passField = doc.getString("password") ?: doc.getString("pass") ?: ""
+        val passHash = doc.getString("passwordHash") ?: ""
+        val pinLong = doc.getLong("pin")
+        val pinIntStr = pinLong?.toString() ?: ""
+
+        if (pinHash.isNotBlank() && (pinHash.equals(sha256, true) || pinHash.equals(md5, true) || pinHash == pass)) return true
+        if (pin.isNotBlank() && (pin == pass || pin.equals(sha256, true) || pin.equals(md5, true))) return true
+        if (pinIntStr.isNotBlank() && pinIntStr == pass) return true
+        if (passField.isNotBlank() && (passField == pass || passField.equals(sha256, true) || passField.equals(md5, true))) return true
+        if (passHash.isNotBlank() && (passHash.equals(sha256, true) || passHash.equals(md5, true))) return true
+
+        return false
+    }
+
+    private fun extractUserFromDoc(doc: DocumentSnapshot, fallbackId: String, pass: String): User {
+        val uid = doc.id.ifBlank { fallbackId }
+        val phone = doc.getString("phone") ?: doc.getString("mobile") ?: (if (uid.any { it.isDigit() }) uid else "")
+        val name = doc.getString("name") ?: doc.getString("shopName") ?: doc.getString("userName") ?: doc.getString("username") ?: "Shop Owner"
+        val email = doc.getString("email") ?: ""
+        val pinHash = doc.getString("pinHash") ?: hashPin(pass)
+        return User(
+            uid = uid,
+            phone = phone,
+            name = name,
+            email = email,
+            pinHash = pinHash
+        )
+    }
+
+    private fun findUserInFirestore(
+        candidates: List<String>,
+        rawInput: String,
+        onFound: (DocumentSnapshot?) -> Unit
+    ) {
+        fun checkDocIndex(index: Int) {
+            if (index < candidates.size) {
+                val candidateId = candidates[index]
+                firestore.collection("users").document(candidateId).get()
+                    .addOnSuccessListener { doc ->
+                        if (doc.exists() && (doc.data?.isNotEmpty() == true)) {
+                            onFound(doc)
+                        } else {
+                            checkDocIndex(index + 1)
+                        }
+                    }
+                    .addOnFailureListener {
+                        checkDocIndex(index + 1)
+                    }
+            } else {
+                // Not found by direct document ID, query by phone / email fields
+                val digits = rawInput.filter { it.isDigit() }
+                val phoneQuery = if (digits.isNotBlank()) digits else rawInput
+                firestore.collection("users")
+                    .whereEqualTo("phone", phoneQuery)
+                    .limit(1)
+                    .get()
+                    .addOnSuccessListener { querySnap ->
+                        val doc = querySnap.documents.firstOrNull()
+                        if (doc != null) {
+                            onFound(doc)
+                        } else if (rawInput.contains("@")) {
+                            firestore.collection("users")
+                                .whereEqualTo("email", rawInput)
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener { emailSnap ->
+                                    onFound(emailSnap.documents.firstOrNull())
+                                }
+                                .addOnFailureListener { onFound(null) }
+                        } else if (digits.length == 11 && digits.startsWith("0")) {
+                            firestore.collection("users")
+                                .whereEqualTo("phone", "+88$digits")
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener { pSnap ->
+                                    val match = pSnap.documents.firstOrNull()
+                                    if (match != null) {
+                                        onFound(match)
+                                    } else {
+                                        firestore.collection("users")
+                                            .whereEqualTo("phone", digits.substring(1))
+                                            .limit(1)
+                                            .get()
+                                            .addOnSuccessListener { pSnap2 ->
+                                                onFound(pSnap2.documents.firstOrNull())
+                                            }
+                                            .addOnFailureListener { onFound(null) }
+                                    }
+                                }
+                                .addOnFailureListener { onFound(null) }
+                        } else {
+                            onFound(null)
+                        }
+                    }
+                    .addOnFailureListener {
+                        onFound(null)
+                    }
+            }
+        }
+
+        checkDocIndex(0)
+    }
 
     fun signInWithEmailPassword(
         emailInput: String,
         passwordInput: String,
         onResult: (Boolean, String?) -> Unit
     ) {
-        val email = emailInput.trim()
+        val rawInput = emailInput.trim()
         val password = passwordInput.trim()
 
-        if (email.isBlank() || password.isBlank()) {
-            val msg = "Please enter both Email/Phone and Password!"
+        if (rawInput.isBlank() || password.isBlank()) {
+            val msg = "অনুগ্রহ করে মোবাইল/ইমেইল এবং পিন/পাসওয়ার্ড দিন।"
             _lastError.value = msg
             onResult(false, msg)
             return
         }
 
         _isLoading.value = true
-        _syncStatus.value = "Authenticating with Firebase..."
+        _syncStatus.value = "যাচাই করা হচ্ছে (Verifying)..."
         _lastError.value = null
 
-        // If user entered a plain phone number without '@', check if they have a mapped email or format
-        if (!email.contains("@")) {
-            // Check Firestore users collection by phone
-            firestore.collection("users")
-                .whereEqualTo("phone", email)
-                .get()
-                .addOnSuccessListener { querySnapshot ->
-                    val matchedDoc = querySnapshot.documents.firstOrNull()
-                    val targetEmail = matchedDoc?.getString("email")
-                    if (!targetEmail.isNullOrBlank()) {
-                        executeFirebaseAuthSignIn(targetEmail, password, onResult)
-                    } else {
-                        // Attempt fallback email format (e.g., 017xxx@poysha.com) or inform user
-                        executeFirebaseAuthSignIn("$email@poysha.pos", password) { success, err ->
-                            if (!success) {
-                                _isLoading.value = false
-                                val detailedErr = "Phone number not registered. Please log in with your Firebase Email or Register a new account."
-                                _lastError.value = detailedErr
-                                onResult(false, detailedErr)
-                            } else {
-                                onResult(true, null)
-                            }
-                        }
-                    }
+        val candidates = generateCandidateKeys(rawInput)
+
+        // Step 1: Check Firestore directly (matches HTML web app database)
+        findUserInFirestore(candidates, rawInput) { firestoreDoc ->
+            if (firestoreDoc != null) {
+                // User document found in Firestore!
+                val isValid = verifyUserDoc(firestoreDoc, password)
+                if (isValid) {
+                    val user = extractUserFromDoc(firestoreDoc, firestoreDoc.id, password)
+                    _currentUser.value = user
+                    _syncStatus.value = "লগইন সফল (${user.name})"
+                    _isLoading.value = false
+                    saveSession(user)
+                    loadUserData(user.uid)
+                    onResult(true, null)
+                    return@findUserInFirestore
+                } else {
+                    // Password / PIN mismatch
+                    _isLoading.value = false
+                    val msg = "ভুল পিন বা পাসওয়ার্ড দিয়েছেন। অনুগ্রহ করে সঠিক পিন দিন।"
+                    _lastError.value = msg
+                    _syncStatus.value = "ভুল পিন (Invalid PIN)"
+                    onResult(false, msg)
+                    return@findUserInFirestore
                 }
-                .addOnFailureListener { e ->
-                    // Directly try standard sign in with formatted email
-                    executeFirebaseAuthSignIn("$email@poysha.pos", password, onResult)
-                }
-        } else {
-            executeFirebaseAuthSignIn(email, password, onResult)
+            }
+
+            // Step 2: Fallback to Firebase Authentication
+            val emailToTry = if (rawInput.contains("@")) {
+                rawInput
+            } else {
+                val digits = rawInput.filter { it.isDigit() }
+                if (digits.isNotBlank()) "$digits@poysha.pos" else rawInput
+            }
+
+            executeFirebaseAuthSignIn(emailToTry, password, rawInput, onResult)
         }
     }
 
     private fun executeFirebaseAuthSignIn(
         email: String,
         pass: String,
+        originalInput: String,
         onResult: (Boolean, String?) -> Unit
     ) {
         auth.signInWithEmailAndPassword(email, pass)
@@ -185,16 +377,18 @@ object PosRepository {
                         val uid = fbUser.uid
                         val uEmail = fbUser.email ?: email
                         val uName = fbUser.displayName ?: uEmail.substringBefore("@")
-                        val uPhone = fbUser.phoneNumber ?: ""
+                        val uPhone = fbUser.phoneNumber ?: (if (!originalInput.contains("@")) originalInput else "")
 
                         val user = User(
                             uid = uid,
                             email = uEmail,
                             name = uName,
-                            phone = uPhone
+                            phone = uPhone,
+                            pinHash = hashPin(pass)
                         )
                         _currentUser.value = user
-                        _syncStatus.value = "Connected to Firebase ($uEmail)"
+                        _syncStatus.value = "লগইন সফল ($uName)"
+                        saveSession(user)
                         loadUserData(uid)
                         onResult(true, null)
                     } else {
@@ -204,10 +398,14 @@ object PosRepository {
                     }
                 } else {
                     val ex = task.exception
-                    val friendlyError = parseFirebaseError(ex)
+                    val friendlyError = if (originalInput.contains("@")) {
+                        parseFirebaseError(ex)
+                    } else {
+                        "কোনো একাউন্ট পাওয়া যায়নি অথবা পিন ভুল। অনুগ্রহ করে সঠিক মোবাইল ও পিন দিন, অথবা 'নতুন একাউন্ট খুলুন' এ ট্যাপ করুন।"
+                    }
                     _lastError.value = friendlyError
                     _syncStatus.value = "Login Failed"
-                    Log.w(TAG, "Firebase login unsuccessful: ${ex?.message}")
+                    Log.w(TAG, "Login failed for identifier $originalInput: ${ex?.message}")
                     onResult(false, friendlyError)
                 }
             }
@@ -225,15 +423,15 @@ object PosRepository {
         val trimmedName = name.trim()
         val trimmedPhone = phone.trim()
 
-        if (trimmedEmail.isBlank() || trimmedPass.isBlank()) {
-            val msg = "Email and Password cannot be empty!"
+        if (trimmedPhone.isBlank() && trimmedEmail.isBlank()) {
+            val msg = "মোবাইল নম্বর অথবা ইমেইল দিন (Mobile or Email required)!"
             _lastError.value = msg
             onResult(false, msg)
             return
         }
 
-        if (trimmedPass.length < 6) {
-            val msg = "Password must be at least 6 characters long!"
+        if (trimmedPass.length < 4) {
+            val msg = "পিন/পাসওয়ার্ড অন্তত ৪ সংখ্যার হতে হবে (Min 4 digits)!"
             _lastError.value = msg
             onResult(false, msg)
             return
@@ -243,52 +441,54 @@ object PosRepository {
         _syncStatus.value = "Creating Firebase Account..."
         _lastError.value = null
 
-        auth.createUserWithEmailAndPassword(trimmedEmail, trimmedPass)
-            .addOnCompleteListener { task ->
+        // Document ID should be Phone number if provided, else Email or UUID (exact HTML app structure)
+        val docId = if (trimmedPhone.isNotBlank()) trimmedPhone else trimmedEmail.ifBlank { UUID.randomUUID().toString() }
+        val userMap = hashMapOf(
+            "uid" to docId,
+            "phone" to trimmedPhone,
+            "name" to trimmedName.ifBlank { "Shop Owner" },
+            "email" to trimmedEmail,
+            "pinHash" to hashPin(trimmedPass),
+            "pin" to trimmedPass,
+            "role" to "owner",
+            "createdAt" to currentDateStr()
+        )
+
+        // 1. Save directly to Firestore collection "users"
+        firestore.collection("users").document(docId).set(userMap)
+            .addOnSuccessListener {
+                val user = User(
+                    uid = docId,
+                    email = trimmedEmail,
+                    name = trimmedName.ifBlank { "Shop Owner" },
+                    phone = trimmedPhone,
+                    pinHash = hashPin(trimmedPass)
+                )
+                _currentUser.value = user
                 _isLoading.value = false
-                if (task.isSuccessful) {
-                    val fbUser = auth.currentUser
-                    if (fbUser != null) {
-                        val uid = fbUser.uid
-                        // Update display name
-                        val profileUpdates = UserProfileChangeRequest.Builder()
-                            .setDisplayName(trimmedName.ifBlank { trimmedEmail.substringBefore("@") })
-                            .build()
-                        fbUser.updateProfile(profileUpdates)
+                _syncStatus.value = "Account created successfully"
+                saveSession(user)
 
-                        val user = User(
-                            uid = uid,
-                            email = trimmedEmail,
-                            name = trimmedName.ifBlank { "User" },
-                            phone = trimmedPhone
-                        )
-                        _currentUser.value = user
+                // Initialize default shop for the new account
+                val shopName = "${user.name} POS"
+                addShop(shopName, "General Store", "Dhaka, Bangladesh", trimmedPhone)
+                loadUserData(docId)
 
-                        // Save profile to Firestore and RTDB
-                        val userMap = mapOf(
-                            "uid" to uid,
-                            "email" to trimmedEmail,
-                            "name" to user.name,
-                            "phone" to trimmedPhone,
-                            "createdAt" to currentDateStr()
-                        )
-                        firestore.collection("users").document(uid).set(userMap)
-                        rtdb?.child("users")?.child(uid)?.setValue(userMap)
+                // Also try creating in Firebase Auth in background (optional fallback)
+                val authEmail = if (trimmedEmail.contains("@")) trimmedEmail else "$docId@poysha.pos"
+                try {
+                    auth.createUserWithEmailAndPassword(authEmail, trimmedPass)
+                } catch (_: Exception) {}
 
-                        _syncStatus.value = "Account created successfully"
-                        loadUserData(uid)
-                        onResult(true, null)
-                    } else {
-                        onResult(true, null)
-                    }
-                } else {
-                    val ex = task.exception
-                    val friendlyError = parseFirebaseError(ex)
-                    _lastError.value = friendlyError
-                    _syncStatus.value = "Registration Failed"
-                    Log.w(TAG, "Firebase register unsuccessful: ${ex?.message}")
-                    onResult(false, friendlyError)
-                }
+                onResult(true, null)
+            }
+            .addOnFailureListener { e ->
+                _isLoading.value = false
+                val err = "Registration failed: ${e.localizedMessage}"
+                _lastError.value = err
+                _syncStatus.value = "Registration Failed"
+                Log.w(TAG, "Firestore user creation error: ${e.message}")
+                onResult(false, err)
             }
     }
 
@@ -618,8 +818,9 @@ object PosRepository {
     }
 
     fun logout() {
+        prefs?.edit()?.clear()?.apply()
         detachListeners()
-        auth.signOut()
+        try { auth.signOut() } catch (_: Exception) {}
         _currentUser.value = null
         _activeShop.value = null
         _shops.value = emptyList()

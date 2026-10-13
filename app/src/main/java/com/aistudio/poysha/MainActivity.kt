@@ -31,6 +31,7 @@ import com.aistudio.poysha.ui.theme.PoyshaTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        PosRepository.init(this)
         enableEdgeToEdge()
         setContent {
             PoyshaTheme {

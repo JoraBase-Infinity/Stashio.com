@@ -201,13 +201,13 @@ fun AuthScreen(
                 when (authMode) {
                     "LOGIN" -> {
                         Text(
-                            "Log in with Firebase Account",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            "অ্যাকাউন্টে লগইন করুন (Log in)",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
                             color = PoyshaTextDark
                         )
                         Text(
-                            "Enter your registered Firebase email & password",
+                            "আপনার নিবন্ধিত মোবাইল নম্বর বা ইমেইল এবং পিন দিন",
                             fontSize = 12.sp,
                             color = PoyshaTextLight,
                             textAlign = TextAlign.Center
@@ -248,8 +248,9 @@ fun AuthScreen(
                                 PosRepository.clearError()
                                 localMessage = null
                             },
-                            label = { Text("Email or Registered Mobile") },
-                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = PoyshaPrimary) },
+                            label = { Text("মোবাইল নম্বর বা ইমেইল (Mobile / Email)") },
+                            placeholder = { Text("যেমন: 017xxxxxxxx বা ইমেইল") },
+                            leadingIcon = { Icon(Icons.Default.PhoneIphone, contentDescription = null, tint = PoyshaPrimary) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
@@ -267,7 +268,8 @@ fun AuthScreen(
                                 PosRepository.clearError()
                                 localMessage = null
                             },
-                            label = { Text("Password / PIN") },
+                            label = { Text("পিন বা পাসওয়ার্ড (PIN / Password)") },
+                            placeholder = { Text("যেমন: 1234") },
                             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = PoyshaPrimary) },
                             trailingIcon = {
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -293,7 +295,7 @@ fun AuthScreen(
                                 localMessage = null
                                 isSuccessMessage = false
                                 if (emailOrPhone.isBlank() || password.isBlank()) {
-                                    localMessage = "দয়া করে ইমেইল এবং পাসওয়ার্ড দিন (Please enter Email & Password)."
+                                    localMessage = "দয়া করে মোবাইল নম্বর/ইমেইল এবং পিন দিন。"
                                 } else {
                                     PosRepository.signInWithEmailPassword(emailOrPhone, password) { success, err ->
                                         if (success) {
@@ -321,7 +323,7 @@ fun AuthScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text("লগইন হচ্ছে...", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             } else {
-                                Text("FIREBASE LOGIN", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("লগইন করুন (LOGIN)", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
                             }
@@ -465,10 +467,10 @@ fun AuthScreen(
                             onClick = {
                                 localMessage = null
                                 isSuccessMessage = false
-                                if (regName.isBlank() || regEmail.isBlank() || regPassword.isBlank()) {
-                                    localMessage = "নাম, ইমেইল এবং পাসওয়ার্ড পূরণ করুন।"
-                                } else if (regPassword.length < 6) {
-                                    localMessage = "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।"
+                                if (regName.isBlank() || (regPhone.isBlank() && regEmail.isBlank()) || regPassword.isBlank()) {
+                                    localMessage = "দোকানের নাম, মোবাইল নম্বর এবং পিন/পাসওয়ার্ড দিন।"
+                                } else if (regPassword.length < 4) {
+                                    localMessage = "পিন/পাসওয়ার্ড কমপক্ষে ৪ সংখ্যার হতে হবে।"
                                 } else if (regPassword != regConfirmPassword) {
                                     localMessage = "উভয় পাসওয়ার্ড একই হতে হবে।"
                                 } else {
@@ -499,7 +501,7 @@ fun AuthScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text("তৈরি হচ্ছে...", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             } else {
-                                Text("REGISTER REAL ACCOUNT", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("একাউন্ট তৈরি করুন (REGISTER)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                         }
 
