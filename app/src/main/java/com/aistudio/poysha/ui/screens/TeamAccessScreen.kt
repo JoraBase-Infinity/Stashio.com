@@ -31,12 +31,19 @@ fun TeamAccessScreen(
     var memberPhone by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("Staff") }
 
-    val mockMembers = remember {
-        mutableStateListOf(
-            mapOf("name" to "Fahim Maya", "phone" to "01712345678", "role" to "Owner"),
-            mapOf("name" to "Anisur Rahman", "phone" to "01811223344", "role" to "Manager"),
-            mapOf("name" to "Salam Mia", "phone" to "01922334455", "role" to "Staff")
-        )
+    val currentUser by PosRepository.currentUser.collectAsState()
+    val members = remember { mutableStateListOf<Map<String, String>>() }
+
+    LaunchedEffect(currentUser) {
+        if (members.isEmpty() && currentUser != null) {
+            members.add(
+                mapOf(
+                    "name" to currentUser!!.name,
+                    "phone" to currentUser!!.phone,
+                    "role" to "Owner"
+                )
+            )
+        }
     }
 
     Scaffold(
@@ -79,7 +86,33 @@ fun TeamAccessScreen(
                 Text("Shop Staff & Permissions", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = PoyshaTextDark)
             }
 
-            items(mockMembers) { member ->
+            if (members.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(28.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(Icons.Default.Group, contentDescription = null, tint = PoyshaPrimaryLight, modifier = Modifier.size(48.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text("No Team Members Added", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = PoyshaTextDark)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Add your staff, cashiers, or managers to provide POS access.", fontSize = 12.sp, color = PoyshaTextLight, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        }
+                    }
+                }
+            }
+
+            items(members) { member ->
                 val role = member["role"] ?: "Staff"
                 val badgeColor = when (role) {
                     "Owner" -> PoyshaGreen
@@ -138,7 +171,7 @@ fun TeamAccessScreen(
                         }
 
                         IconButton(onClick = {
-                            mockMembers.remove(member)
+                            members.remove(member)
                         }) {
                             Icon(Icons.Default.Delete, contentDescription = "Remove", tint = PoyshaRed)
                         }
@@ -175,7 +208,7 @@ fun TeamAccessScreen(
                 Button(
                     onClick = {
                         if (memberName.isNotBlank() && memberPhone.isNotBlank()) {
-                            mockMembers.add(mapOf("name" to memberName, "phone" to memberPhone, "role" to selectedRole))
+                            members.add(mapOf("name" to memberName, "phone" to memberPhone, "role" to selectedRole))
                             memberName = ""
                             memberPhone = ""
                             showAddDialog = false

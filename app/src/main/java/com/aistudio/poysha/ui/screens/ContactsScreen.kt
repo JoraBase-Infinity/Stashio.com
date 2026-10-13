@@ -146,6 +146,53 @@ fun ContactsScreen(
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                if (filteredContacts.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 20.dp),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.Contacts, contentDescription = null, tint = PoyshaPrimaryLight, modifier = Modifier.size(54.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    if (selectedType == "Customer") "No Customers Found" else "No Suppliers Found",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PoyshaTextDark
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    if (searchQuery.isNotEmpty()) "No matching contacts found for \"$searchQuery\"."
+                                    else "You have no ${selectedType.lowercase()}s added yet. Tap below to create one.",
+                                    fontSize = 12.sp,
+                                    color = PoyshaTextLight,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(
+                                    onClick = { showAddDialog = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = PoyshaPrimary),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Add $selectedType", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 items(filteredContacts) { contact ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),

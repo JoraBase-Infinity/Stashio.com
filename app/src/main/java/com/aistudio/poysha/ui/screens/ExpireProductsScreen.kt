@@ -36,8 +36,8 @@ fun ExpireProductsScreen(
         }
     }
 
-    val expiredCount = remember(products) { products.count { it.stockQty > 0 && it.id == "p6" } } // mock sample
-    val expiringSoonCount = remember(products) { products.count { it.stockQty <= 3 } }
+    val expiredCount = remember(products) { products.count { it.stockQty <= 0 } }
+    val expiringSoonCount = remember(products) { products.count { it.stockQty in 1..it.minStockAlert } }
 
     Scaffold(
         topBar = {

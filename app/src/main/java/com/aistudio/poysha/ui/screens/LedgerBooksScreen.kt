@@ -158,6 +158,15 @@ fun LedgerBooksScreen(
                         }
                     }
 
+                    if (sales.isEmpty()) {
+                        item {
+                            EmptyLedgerCard(
+                                title = "No Sales Records Yet",
+                                subtitle = "Sell products from the Sell counter to generate customer invoices."
+                            )
+                        }
+                    }
+
                     items(sales) { sale ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -241,6 +250,15 @@ fun LedgerBooksScreen(
                         }
                     }
 
+                    if (purchases.isEmpty()) {
+                        item {
+                            EmptyLedgerCard(
+                                title = "No Purchase Records Yet",
+                                subtitle = "Record inventory purchases to calculate stock and supplier dues."
+                            )
+                        }
+                    }
+
                     items(purchases) { purchase ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -284,6 +302,15 @@ fun LedgerBooksScreen(
 
                 "DUES" -> {
                     val dueContacts = contacts.filter { it.dueAmount > 0 }
+
+                    if (dueContacts.isEmpty()) {
+                        item {
+                            EmptyLedgerCard(
+                                title = "No Outstanding Dues",
+                                subtitle = "All customer dues and supplier payables are clear."
+                            )
+                        }
+                    }
 
                     items(dueContacts) { contact ->
                         val isCustomer = contact.type.equals("Customer", true)
@@ -373,6 +400,15 @@ fun LedgerBooksScreen(
                                     Text("Add Expense")
                                 }
                             }
+                        }
+                    }
+
+                    if (expenses.isEmpty()) {
+                        item {
+                            EmptyLedgerCard(
+                                title = "No Expenses Recorded",
+                                subtitle = "Record shop utilities, rent, staff salary, refreshments, and daily costs."
+                            )
                         }
                     }
 
@@ -509,5 +545,30 @@ fun LedgerBooksScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+fun EmptyLedgerCard(title: String, subtitle: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(Icons.Default.MenuBook, contentDescription = null, tint = PoyshaPrimaryLight, modifier = Modifier.size(44.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = PoyshaTextDark)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(subtitle, fontSize = 12.sp, color = PoyshaTextLight, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
     }
 }

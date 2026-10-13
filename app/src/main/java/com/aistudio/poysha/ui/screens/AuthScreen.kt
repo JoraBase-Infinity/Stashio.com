@@ -33,8 +33,8 @@ fun AuthScreen(
     onLoginSuccess: () -> Unit
 ) {
     var authMode by remember { mutableStateOf("LOGIN") } // LOGIN, REGISTER, OTP, PIN, FORGOT
-    var phone by remember { mutableStateOf("01712345678") }
-    var pin by remember { mutableStateOf("123456") }
+    var phone by remember { mutableStateOf("") }
+    var pin by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var otpInput by remember { mutableStateOf("") }
@@ -148,6 +148,33 @@ fun AuthScreen(
                             Text("LOGIN", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             Spacer(modifier = Modifier.width(8.dp))
                             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedButton(
+                            onClick = {
+                                val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+                                auth.signInAnonymously().addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        val firebaseUser = auth.currentUser
+                                        PosRepository.loginWithFirebase(firebaseUser?.uid ?: "user_cloud", firebaseUser?.email ?: "Cloud Owner")
+                                        successMessage = "Connected to Firebase Cloud! Logged in."
+                                        onLoginSuccess()
+                                    } else {
+                                        errorMessage = "Firebase Cloud Login failed: ${task.exception?.localizedMessage}"
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = PoyshaPrimary)
+                        ) {
+                            Icon(Icons.Default.Cloud, contentDescription = null, tint = PoyshaPrimary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Sign in with Firebase Cloud", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
 
                         Spacer(modifier = Modifier.height(18.dp))

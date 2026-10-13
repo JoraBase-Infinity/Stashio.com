@@ -25,141 +25,112 @@ object PosRepository {
     }
 
     // Auth & Shop State
-    private val _currentUser = MutableStateFlow<User?>(
-        User(phone = "01712345678", name = "Fahim Maya", email = "fahim@poysha.com", pinHash = hashPin("123456"))
-    )
+    private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
-    private val _shops = MutableStateFlow<List<Shop>>(
-        listOf(
-            Shop(id = "shop_1", name = "Poysha General Store", type = "Retail & Grocery", address = "Gulshan-1, Dhaka", contact = "01712345678"),
-            Shop(id = "shop_2", name = "Poysha Fashion Hub", type = "Clothing & Apparel", address = "Dhanmondi, Dhaka", contact = "01812345678")
-        )
-    )
+    private val _shops = MutableStateFlow<List<Shop>>(emptyList())
     val shops: StateFlow<List<Shop>> = _shops.asStateFlow()
 
-    private val _activeShop = MutableStateFlow<Shop?>(_shops.value.first())
+    private val _activeShop = MutableStateFlow<Shop?>(null)
     val activeShop: StateFlow<Shop?> = _activeShop.asStateFlow()
 
     // Products
-    private val _products = MutableStateFlow<List<Product>>(
-        listOf(
-            Product(id = "p1", name = "Miniket Premium Rice", brand = "Fresh", purchasePrice = 68.0, sellPrice = 76.0, stockQty = 45, unit = "kg", barcode = "89411001"),
-            Product(id = "p2", name = "Soyabean Oil 5L", brand = "Teer", purchasePrice = 780.0, sellPrice = 850.0, stockQty = 18, unit = "can", barcode = "89411002"),
-            Product(id = "p3", name = "Sugar White Pure", brand = "Deshi", purchasePrice = 125.0, sellPrice = 138.0, stockQty = 80, unit = "kg", barcode = "89411003"),
-            Product(id = "p4", name = "Red Lentils (Mosur Dal)", brand = "Fresh", purchasePrice = 130.0, sellPrice = 145.0, stockQty = 35, unit = "kg", barcode = "89411004"),
-            Product(id = "p5", name = "Aromatic Chinigura Rice", brand = "Pran", purchasePrice = 140.0, sellPrice = 160.0, stockQty = 25, unit = "kg", barcode = "89411005"),
-            Product(id = "p6", name = "Tea Leaf Jar 400g", brand = "Ispahani", purchasePrice = 210.0, sellPrice = 240.0, stockQty = 3, unit = "jar", barcode = "89411006"), // low stock
-            Product(id = "p7", name = "Biscuits Toast 300g", brand = "Olympic", purchasePrice = 45.0, sellPrice = 55.0, stockQty = 60, unit = "pkt", barcode = "89411007"),
-            Product(id = "p8", name = "Milk Powder 500g", brand = "Dano", purchasePrice = 440.0, sellPrice = 490.0, stockQty = 12, unit = "pkt", barcode = "89411008")
-        )
-    )
+    private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products.asStateFlow()
 
     // Contacts
-    private val _contacts = MutableStateFlow<List<Contact>>(
-        listOf(
-            Contact(id = "c1", name = "Rahim Ahmed", phone = "01811223344", address = "Mirpur-10, Dhaka", type = "Customer", dueAmount = 450.0, totalTransactions = 5400.0),
-            Contact(id = "c2", name = "Kamal Traders", phone = "01922334455", address = "Kaptan Bazar, Dhaka", type = "Supplier", dueAmount = 2200.0, totalTransactions = 38000.0),
-            Contact(id = "c3", name = "Jamal Uddin", phone = "01733445566", address = "Badda, Dhaka", type = "Customer", dueAmount = 0.0, totalTransactions = 12000.0),
-            Contact(id = "c4", name = "City Wholesale Agency", phone = "01644556677", address = "Moulvibazar, Dhaka", type = "Supplier", dueAmount = 1500.0, totalTransactions = 45000.0)
-        )
-    )
+    private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts.asStateFlow()
 
     // Sales
-    private val _sales = MutableStateFlow<List<Sale>>(
-        listOf(
-            Sale(
-                id = "s1",
-                invoiceNo = "INV-10023",
-                date = currentDateStr(),
-                customerName = "Rahim Ahmed",
-                customerPhone = "01811223344",
-                items = listOf(
-                    SaleItem("p1", "Miniket Premium Rice", "Fresh", 5, "kg", 76.0, 380.0),
-                    SaleItem("p2", "Soyabean Oil 5L", "Teer", 1, "can", 850.0, 850.0)
-                ),
-                subtotal = 1230.0,
-                discount = 30.0,
-                grandTotal = 1200.0,
-                paid = 750.0,
-                due = 450.0,
-                paymentMethod = "Cash"
-            )
-        )
-    )
+    private val _sales = MutableStateFlow<List<Sale>>(emptyList())
     val sales: StateFlow<List<Sale>> = _sales.asStateFlow()
 
     // Purchases
-    private val _purchases = MutableStateFlow<List<Purchase>>(
-        listOf(
-            Purchase(
-                id = "pu1",
-                billNo = "BILL-8041",
-                date = currentDateStr(),
-                supplierName = "Kamal Traders",
-                supplierPhone = "01922334455",
-                items = listOf(
-                    PurchaseItem("p1", "Miniket Premium Rice", "Fresh", 50, "kg", 68.0, 3400.0)
-                ),
-                subtotal = 3400.0,
-                discount = 0.0,
-                grandTotal = 3400.0,
-                paid = 1200.0,
-                due = 2200.0,
-                paymentMethod = "Bank"
-            )
-        )
-    )
+    private val _purchases = MutableStateFlow<List<Purchase>>(emptyList())
     val purchases: StateFlow<List<Purchase>> = _purchases.asStateFlow()
 
     // Expenses
-    private val _expenses = MutableStateFlow<List<Expense>>(
-        listOf(
-            Expense(id = "e1", title = "Shop Electric Bill", amount = 1450.0, category = "Utility", date = currentDateStr(), note = "DESCO March"),
-            Expense(id = "e2", title = "Tea & Staff Lunch", amount = 220.0, category = "Refreshment", date = currentDateStr(), note = "Daily counter expenses")
-        )
-    )
+    private val _expenses = MutableStateFlow<List<Expense>>(emptyList())
     val expenses: StateFlow<List<Expense>> = _expenses.asStateFlow()
 
     // Cash Transactions & Balance
-    private val _cashTransactions = MutableStateFlow<List<CashTransaction>>(
-        listOf(
-            CashTransaction(id = "tx1", type = "IN", amount = 5000.0, reason = "Opening Counter Balance", date = currentDateStr()),
-            CashTransaction(id = "tx2", type = "IN", amount = 750.0, reason = "Sale: INV-10023", date = currentDateStr()),
-            CashTransaction(id = "tx3", type = "OUT", amount = 220.0, reason = "Expense: Tea & Staff Lunch", date = currentDateStr())
-        )
-    )
+    private val _cashTransactions = MutableStateFlow<List<CashTransaction>>(emptyList())
     val cashTransactions: StateFlow<List<CashTransaction>> = _cashTransactions.asStateFlow()
 
     // Notes
-    private val _notes = MutableStateFlow<List<Note>>(
-        listOf(
-            Note("n1", "Supplier Order", "Call Kamal Traders for 10 bags of Miniket rice on Monday.", formatDisplayDate()),
-            Note("n2", "Due Collection", "Follow up with Rahim Ahmed for remaining 450 Taka due.", formatDisplayDate())
-        )
-    )
+    private val _notes = MutableStateFlow<List<Note>>(emptyList())
     val notes: StateFlow<List<Note>> = _notes.asStateFlow()
+
+    // Registered users list in memory
+    private val _registeredUsers = mutableListOf<User>()
 
     // ----------------------------------------------------
     // Operations
     // ----------------------------------------------------
 
     fun login(phone: String, pin: String): Boolean {
-        val user = _currentUser.value
-        return if (user != null && user.phone == phone && user.pinHash == hashPin(pin)) {
+        val existing = _registeredUsers.find { _registeredUsers -> _registeredUsers.phone == phone && _registeredUsers.pinHash == hashPin(pin) }
+        return if (existing != null) {
+            _currentUser.value = existing
             true
         } else {
-            // Auto register/allow if test credential or set current
-            val newUser = User(phone, "Shop Owner", "owner@poysha.com", hashPin(pin))
+            // First time login with this phone number auto-initializes the session
+            val newUser = User(phone = phone, name = "Shop Owner", email = "", pinHash = hashPin(pin))
+            _registeredUsers.add(newUser)
             _currentUser.value = newUser
             true
         }
     }
 
+    fun loginWithFirebase(uid: String, emailOrName: String) {
+        val user = User(phone = uid, name = emailOrName.ifBlank { "Cloud Owner" }, email = emailOrName, pinHash = "")
+        _currentUser.value = user
+        try {
+            val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            db.collection("users").document(uid).collection("shops").get()
+                .addOnSuccessListener { result ->
+                    val cloudShops = result.documents.mapNotNull { doc ->
+                        doc.toObject(Shop::class.java)
+                    }
+                    if (cloudShops.isNotEmpty()) {
+                        _shops.value = cloudShops
+                        if (_activeShop.value == null) {
+                            _activeShop.value = cloudShops.first()
+                        }
+                    } else if (_shops.value.isEmpty()) {
+                        val defaultShop = Shop(
+                            id = "shop_" + UUID.randomUUID().toString().take(6),
+                            name = "My Cloud Shop",
+                            type = "General Store",
+                            address = "Dhaka, Bangladesh",
+                            contact = uid
+                        )
+                        _shops.value = listOf(defaultShop)
+                        _activeShop.value = defaultShop
+                        db.collection("users").document(uid).collection("shops").document(defaultShop.id).set(defaultShop)
+                    }
+                }
+        } catch (e: Exception) {
+            if (_shops.value.isEmpty()) {
+                val defaultShop = Shop(
+                    id = "shop_" + UUID.randomUUID().toString().take(6),
+                    name = "My Shop",
+                    type = "General Store",
+                    address = "Dhaka, Bangladesh",
+                    contact = uid
+                )
+                _shops.value = listOf(defaultShop)
+                _activeShop.value = defaultShop
+            }
+        }
+    }
+
     fun register(name: String, phone: String, email: String, pin: String) {
-        _currentUser.value = User(phone, name, email, hashPin(pin))
+        val newUser = User(phone = phone, name = name, email = email, pinHash = hashPin(pin))
+        _registeredUsers.removeAll { it.phone == phone }
+        _registeredUsers.add(newUser)
+        _currentUser.value = newUser
     }
 
     fun selectShop(shop: Shop) {
@@ -169,18 +140,25 @@ object PosRepository {
     fun addShop(name: String, type: String, address: String, contact: String): Shop {
         val newShop = Shop(
             id = "shop_" + UUID.randomUUID().toString().take(6),
-            name = name,
+            name = name.ifBlank { "My Shop" },
             type = type.ifBlank { "General Store" },
             address = address.ifBlank { "Dhaka, Bangladesh" },
-            contact = contact.ifBlank { _currentUser.value?.phone ?: "01700000000" }
+            contact = contact.ifBlank { _currentUser.value?.phone ?: "" }
         )
         _shops.value = _shops.value + newShop
         _activeShop.value = newShop
         return newShop
     }
 
+    fun deleteShop(shopId: String) {
+        _shops.value = _shops.value.filterNot { it.id == shopId }
+        if (_activeShop.value?.id == shopId) {
+            _activeShop.value = _shops.value.firstOrNull()
+        }
+    }
+
     fun logout() {
-        // Just resets active shop selection, keeps data
+        _currentUser.value = null
         _activeShop.value = null
     }
 

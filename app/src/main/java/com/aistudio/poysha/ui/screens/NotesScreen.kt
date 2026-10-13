@@ -67,6 +67,42 @@ fun NotesScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (notes.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = PoyshaPrimaryLight, modifier = Modifier.size(54.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("No Notes Yet", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PoyshaTextDark)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("Save reminders, supplier lists, customer requests or daily memos.", fontSize = 12.sp, color = PoyshaTextLight, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { showAddDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = PoyshaPrimary),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Create Note", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
             items(notes) { note ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
