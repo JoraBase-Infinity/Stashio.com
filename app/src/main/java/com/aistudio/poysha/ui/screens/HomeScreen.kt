@@ -305,15 +305,15 @@ fun HomeScreen(
                         GridIconItem("Contacts", Icons.Default.People, PoyshaTeal, Color(0xFFF0FDFA)) { onNavigate("CONTACTS") }
                         GridIconItem("Product\nList", Icons.Default.AllInbox, PoyshaOrange, Color(0xFFFFF7ED)) { onNavigate("PRODUCTS") }
                         GridIconItem("Estimate /\nQuotation", Icons.Default.Calculate, PoyshaOrange, Color(0xFFFFF7ED)) { onNavigate("ESTIMATE") }
-                        GridIconItem("Sales\nOrder", Icons.Default.AddShoppingCart, PoyshaTeal, Color(0xFFF0FDFA)) { onNavigate("SALES_BOOK") }
+                        GridIconItem("Sales\nOrder", Icons.Default.AddShoppingCart, PoyshaTeal, Color(0xFFF0FDFA)) { onNavigate("SALES_ORDER") }
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
                         GridIconItem("Stock\nReport", Icons.Default.Inventory2, PoyshaGreen, Color(0xFFECFDF5)) { onNavigate("STOCK_BOOK") }
-                        GridIconItem("Business\nReport", Icons.Default.TrendingUp, PoyshaBlue, Color(0xFFEFF6FF)) { onNavigate("REPORTS") }
-                        GridIconItem("Monthly\nReport", Icons.Default.TableChart, PoyshaPurple, Color(0xFFF5F3FF)) { onNavigate("REPORTS") }
+                        GridIconItem("Business\nReport", Icons.Default.TrendingUp, PoyshaBlue, Color(0xFFEFF6FF)) { onNavigate("BUSINESS_REPORT") }
+                        GridIconItem("Monthly\nReport", Icons.Default.TableChart, PoyshaPurple, Color(0xFFF5F3FF)) { onNavigate("MONTHLY_REPORT") }
                         Spacer(modifier = Modifier.width(60.dp))
                     }
                 }
@@ -330,18 +330,18 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
                         GridIconItem("Cash Box", Icons.Default.PointOfSale, PoyshaGreen, Color(0xFFECFDF5)) { onNavigate("CASHBOX") }
-                        GridIconItem("Sales\nReturn", Icons.Default.Undo, PoyshaRed, Color(0xFFFEF2F2)) { onNavigate("SALES_BOOK") }
-                        GridIconItem("Purchase\nReturn", Icons.Default.Redo, PoyshaOrange, Color(0xFFFFF7ED)) { onNavigate("PURCHASE_BOOK") }
-                        GridIconItem("Expire\nItems", Icons.Default.EventBusy, PoyshaRed, Color(0xFFFEF2F2)) { onNavigate("PRODUCTS") }
+                        GridIconItem("Sales\nReturn", Icons.Default.Undo, PoyshaRed, Color(0xFFFEF2F2)) { onNavigate("SALES_RETURN") }
+                        GridIconItem("Purchase\nReturn", Icons.Default.Redo, PoyshaOrange, Color(0xFFFFF7ED)) { onNavigate("PURCHASE_RETURN") }
+                        GridIconItem("Expire\nItems", Icons.Default.EventBusy, PoyshaRed, Color(0xFFFEF2F2)) { onNavigate("EXPIRE_PRODUCT") }
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        GridIconItem("App Access", Icons.Default.Security, PoyshaPurple, Color(0xFFF5F3FF)) { onNavigate("SETTINGS") }
+                        GridIconItem("App Access", Icons.Default.Security, PoyshaPurple, Color(0xFFF5F3FF)) { onNavigate("APP_ACCESS") }
                         GridIconItem("My Notes", Icons.Default.StickyNote2, PoyshaBlue, Color(0xFFEFF6FF)) { onNavigate("NOTES") }
-                        GridIconItem("Barcode\nGen", Icons.Default.QrCode, PoyshaPurple, Color(0xFFF5F3FF)) { onNavigate("PRODUCTS") }
-                        GridIconItem("Printer", Icons.Default.Print, Color(0xFF374151), Color(0xFFF8FAFC)) { onNavigate("SETTINGS") }
+                        GridIconItem("Barcode\nGen", Icons.Default.QrCode, PoyshaPurple, Color(0xFFF5F3FF)) { onNavigate("BARCODE_GEN") }
+                        GridIconItem("Printer", Icons.Default.Print, Color(0xFF374151), Color(0xFFF8FAFC)) { onNavigate("PRINTER") }
                     }
                 }
             }

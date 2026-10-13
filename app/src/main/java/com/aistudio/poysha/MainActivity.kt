@@ -199,6 +199,54 @@ fun PoyshaAppNav() {
                         onBack = { currentScreen = "HOME" }
                     )
 
+                    "APP_ACCESS" -> TeamAccessScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "BARCODE_GEN" -> BarcodeGenScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "BUSINESS_REPORT" -> BusinessReportScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "ESTIMATE" -> EstimateScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "EXPIRE_PRODUCT" -> ExpireProductsScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "MONTHLY_REPORT" -> MonthlyReportScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "SALES_ORDER" -> SalesOrdersScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "PRINTER" -> PrinterSettingsScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "SALES_RETURN" -> SalesReturnScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "PURCHASE_RETURN" -> PurchaseReturnScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "MANAGE_UNITS" -> ManageUnitsScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
+                    "STOCK_BOOK" -> StockBookScreen(
+                        onBack = { currentScreen = "HOME" }
+                    )
+
                     else -> HomeScreen(
                         onNavigate = { currentScreen = it }
                     )
