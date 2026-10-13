@@ -21,13 +21,17 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Setup Firebase Configuration
+      - name: Ensure google-services.json exists
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             echo "Injecting google-services.json from GitHub Secrets..."
             echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          fi
+          if [ ! -f "app/google-services.json" ]; then
+            echo "Error: app/google-services.json is missing!"
+            exit 1
           fi
 
       - name: Decode Keystore
@@ -37,6 +41,10 @@ jobs:
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Decoding keystore..."
             echo "$KEYSTORE_BASE64" | base64 --decode > app/release.keystore
+          fi
+          if [ ! -f "app/release.keystore" ]; then
+            echo "Error: app/release.keystore is missing!"
+            exit 1
           fi
 
       - name: Grant execute permission for gradlew
